@@ -770,6 +770,7 @@ public:
     bool hotPixelFilter;
     bool deadPixelFilter;
     bool hotDeadPixelThresh;
+    bool highlightSmoothing;
     bool darkFrame;
     bool dfAuto;
     bool ff_file;

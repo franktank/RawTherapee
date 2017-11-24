@@ -429,6 +429,7 @@ void ParamsEdited::set (bool v)
     raw.hotPixelFilter = v;
     raw.deadPixelFilter = v;
     raw.hotDeadPixelThresh = v;
+    raw.highlightSmoothing = v;
     raw.darkFrame = v;
     raw.dfAuto = v;
     raw.ff_file = v;
@@ -971,6 +972,7 @@ void ParamsEdited::initFrom (const std::vector<rtengine::procparams::ProcParams>
         raw.hotPixelFilter = raw.hotPixelFilter && p.raw.hotPixelFilter == other.raw.hotPixelFilter;
         raw.deadPixelFilter = raw.deadPixelFilter && p.raw.deadPixelFilter == other.raw.deadPixelFilter;
         raw.hotDeadPixelThresh = raw.hotDeadPixelThresh && p.raw.hotdeadpix_thresh == other.raw.hotdeadpix_thresh;
+        raw.highlightSmoothing = raw.highlightSmoothing && p.raw.highlightSmoothing == other.raw.highlightSmoothing;
         raw.darkFrame = raw.darkFrame && p.raw.dark_frame == other.raw.dark_frame;
         raw.dfAuto = raw.dfAuto && p.raw.df_autoselect == other.raw.df_autoselect;
         raw.ff_file = raw.ff_file && p.raw.ff_file == other.raw.ff_file;
@@ -2603,6 +2605,10 @@ void ParamsEdited::combine (rtengine::procparams::ProcParams& toEdit, const rten
         toEdit.raw.hotdeadpix_thresh = mods.raw.hotdeadpix_thresh;
     }
 
+    if (raw.highlightSmoothing) {
+        toEdit.raw.highlightSmoothing = mods.raw.highlightSmoothing;
+    }
+    
     if (raw.darkFrame) {
         toEdit.raw.dark_frame        = mods.raw.dark_frame;
     }
@@ -3062,7 +3068,7 @@ bool RAWParamsEdited::XTransSensor::isUnchanged() const
 
 bool RAWParamsEdited::isUnchanged() const
 {
-    return  bayersensor.isUnchanged() && xtranssensor.isUnchanged() && caCorrection && caRed && caBlue && hotPixelFilter && deadPixelFilter && hotDeadPixelThresh && darkFrame
+    return  bayersensor.isUnchanged() && xtranssensor.isUnchanged() && caCorrection && caRed && caBlue && hotPixelFilter && deadPixelFilter && hotDeadPixelThresh && highlightSmoothing && darkFrame
             && dfAuto && ff_file && ff_AutoSelect && ff_BlurRadius && ff_BlurType && exPos && exPreser && ff_AutoClipControl && ff_clipControl;
 }
 

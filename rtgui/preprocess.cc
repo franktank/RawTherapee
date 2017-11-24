@@ -30,6 +30,7 @@ PreProcess::PreProcess () : FoldableToolPanel(this, "preprocess", M("TP_PREPROCE
     hotdeadPixel->set_spacing(4);
     hotPixel = Gtk::manage(new Gtk::CheckButton((M("TP_PREPROCESS_HOTPIXFILT"))));
     deadPixel = Gtk::manage(new Gtk::CheckButton((M("TP_PREPROCESS_DEADPIXFILT"))));
+    highSmooth = Gtk::manage(new Gtk::CheckButton((M("TP_PREPROCESS_HIGHLIGHTSMOOTHING"))));
 
     hotPixel->set_tooltip_markup (M("TP_PREPROCESS_HOTPIXFILT_TOOLTIP"));
     deadPixel->set_tooltip_markup (M("TP_PREPROCESS_DEADPIXFILT_TOOLTIP"));
@@ -47,10 +48,12 @@ PreProcess::PreProcess () : FoldableToolPanel(this, "preprocess", M("TP_PREPROCE
 
     hdThreshold->show();
     pack_start( *hdThreshold, Gtk::PACK_SHRINK, 4);
+    pack_start( *highSmooth, Gtk::PACK_SHRINK, 0);
 
 //  hotdeadPixel->show();
     hpixelconn = hotPixel->signal_toggled().connect ( sigc::mem_fun(*this, &PreProcess::hotPixelChanged), true);
     dpixelconn = deadPixel->signal_toggled().connect ( sigc::mem_fun(*this, &PreProcess::deadPixelChanged), true);
+    highsmoothconn = highSmooth->signal_toggled().connect ( sigc::mem_fun(*this, &PreProcess::highSmoothChanged), true);
 }
 
 void PreProcess::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
@@ -58,19 +61,24 @@ void PreProcess::read(const rtengine::procparams::ProcParams* pp, const ParamsEd
     disableListener ();
     hpixelconn.block (true);
     dpixelconn.block (true);
+    highsmoothconn.block(true);
 
     if(pedited ) {
         hotPixel->set_inconsistent (!pedited->raw.hotPixelFilter);
         deadPixel->set_inconsistent (!pedited->raw.deadPixelFilter);
+        highSmooth->set_inconsistent(!pedited->raw.highlightSmoothing);
     }
 
     lastHot = pp->raw.hotPixelFilter;
     lastDead = pp->raw.deadPixelFilter;
+    lastHighSmooth = pp->raw.highlightSmoothing;
     hotPixel->set_active (pp->raw.hotPixelFilter);
     deadPixel->set_active (pp->raw.deadPixelFilter);
+    highSmooth->set_active(pp->raw.highlightSmoothing);
     hdThreshold->setValue (pp->raw.hotdeadpix_thresh);
     hpixelconn.block (false);
     dpixelconn.block (false);
+    highsmoothconn.block(false);
     enableListener ();
 }
 
@@ -78,12 +86,14 @@ void PreProcess::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedi
 {
     pp->raw.hotPixelFilter = hotPixel->get_active();
     pp->raw.deadPixelFilter = deadPixel->get_active();
+    pp->raw.highlightSmoothing = highSmooth->get_active();
     pp->raw.hotdeadpix_thresh = hdThreshold->getIntValue();
 
     if (pedited) {
         pedited->raw.hotDeadPixelThresh = hdThreshold->getEditedState ();
         pedited->raw.hotPixelFilter = !hotPixel->get_inconsistent();
         pedited->raw.deadPixelFilter = !deadPixel->get_inconsistent();
+        pedited->raw.highlightSmoothing = !highSmooth->get_inconsistent();
     }
 }
 
@@ -133,5 +143,25 @@ void PreProcess::deadPixelChanged ()
 
     if (listener) {
         listener->panelChanged (EvPreProcessDeadPixel, deadPixel->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
+    }
+}
+
+void PreProcess::highSmoothChanged ()
+{
+    if (batchMode) {
+        if (highSmooth->get_inconsistent()) {
+            highSmooth->set_inconsistent (false);
+            highsmoothconn.block (true);
+            highSmooth->set_active (false);
+            highsmoothconn.block (false);
+        } else if (lastHighSmooth) {
+            highSmooth->set_inconsistent (true);
+        }
+
+        lastHighSmooth = highSmooth->get_active ();
+    }
+
+    if (listener) {
+        listener->panelChanged (EvPreProcessHighlightSmoothing, highSmooth->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }

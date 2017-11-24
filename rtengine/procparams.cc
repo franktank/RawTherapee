@@ -1008,6 +1008,7 @@ void RAWParams::setDefaults()
     bayersensor.pixelShiftShowMotion = false;
     bayersensor.pixelShiftShowMotionMaskOnly = false;
 
+    highlightSmoothing = false;
 }
 
 void ColorManagementParams::setDefaults()
@@ -3469,6 +3470,10 @@ int ProcParams::save (const Glib::ustring &fname, const Glib::ustring &fname2, b
             keyFile.set_integer ("RAW", "HotDeadPixelThresh", raw.hotdeadpix_thresh );
         }
 
+        if (!pedited || pedited->raw.highlightSmoothing) {
+            keyFile.set_integer ("RAW", "HighlightSmoothing", raw.highlightSmoothing );
+        }
+        
         if (!pedited || pedited->raw.bayersensor.method) {
             keyFile.set_string ("RAW Bayer", "Method", raw.bayersensor.method );
         }
@@ -7678,6 +7683,14 @@ int ProcParams::load (const Glib::ustring &fname, ParamsEdited* pedited)
 
                 if (pedited) {
                     pedited->raw.hotDeadPixelThresh = true;
+                }
+            }
+
+            if (keyFile.has_key ("RAW", "HighlightSmoothing")) {
+                raw.highlightSmoothing = keyFile.get_boolean ("RAW", "HighlightSmoothing" );
+
+                if (pedited) {
+                    pedited->raw.highlightSmoothing = true;
                 }
             }
 

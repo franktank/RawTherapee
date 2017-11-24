@@ -1371,6 +1371,8 @@ public:
     bool deadPixelFilter;
     int hotdeadpix_thresh;
 
+    bool highlightSmoothing;
+
     RAWParams()
     {
         setDefaults();

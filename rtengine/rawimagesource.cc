@@ -1847,9 +1847,11 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
     if(numFrames == 4) {
         for(int i=0; i<4; ++i) {
             scaleColors( 0, 0, W, H, raw, *rawDataFrames[i]);
+            highlight_smoothing(raw, *rawDataFrames[i]);
         }
     } else {
         scaleColors( 0, 0, W, H, raw, rawData); //+ + raw parameters for black level(raw.blackxx)
+        highlight_smoothing(raw, rawData);
     }
 
     // Correct vignetting of lens profile
@@ -3586,6 +3588,50 @@ void RawImageSource::scaleColors(int winx, int winy, int winw, int winh, const R
     }
 
 }
+
+
+void RawImageSource::highlight_smoothing(const RAWParams &raw, array2D<float> &rawData)
+{
+    if (!raw.highlightSmoothing) {
+        return;
+    }
+    
+    if (settings->verbose) {
+        printf("Highlight smoothing...\n");
+    }
+
+    if (plistener) {
+        plistener->setProgressStr("Highlight smoothing...");
+        plistener->setProgress(0.0);
+    }
+
+    const float prescale = max(ref_pre_mul[0], ref_pre_mul[1], ref_pre_mul[2], ref_pre_mul[3]) / min(ref_pre_mul[0], ref_pre_mul[1], ref_pre_mul[2], ref_pre_mul[3]);
+
+    auto clip =
+        [=](float v) -> float
+        {
+            float f = (1.f - LIM01((v / 65535.f) * 0.25f)) * prescale;
+            if (f > 1e-4f) {
+                return CLIP(v * f) / f;
+            } else {
+                return v;
+            }
+        };
+    
+#ifdef _OPENMP
+            #pragma omp parallel for
+#endif
+    for (int row = 0; row < H; ++row) {
+        for (int col = 0; col < W; ++col) {
+            rawData[row][col] = clip(rawData[row][col]);
+        }
+    }
+
+    if (plistener) {
+        plistener->setProgress(1.0);
+    }
+}
+
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

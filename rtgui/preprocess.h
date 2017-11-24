@@ -32,9 +32,11 @@ class PreProcess : public ToolParamBlock, public AdjusterListener, public Foldab
 protected:
     Gtk::CheckButton* hotPixel;
     Gtk::CheckButton* deadPixel;
-    bool lastHot, lastDead;
+    Gtk::CheckButton* highSmooth;
+    bool lastHot, lastDead, lastHighSmooth;
     sigc::connection hpixelconn;
     sigc::connection dpixelconn;
+    sigc::connection highsmoothconn;
     Adjuster* hdThreshold;
 public:
 
@@ -47,6 +49,7 @@ public:
 
     void hotPixelChanged();
     void deadPixelChanged();
+    void highSmoothChanged();
     void adjusterChanged     (Adjuster* a, double newval);
 
 

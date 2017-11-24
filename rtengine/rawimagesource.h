@@ -236,6 +236,8 @@ protected:
     void green_equilibrate_global (array2D<float> &rawData);
     void green_equilibrate (float greenthresh, array2D<float> &rawData);//Emil's green equilibration
 
+    void highlight_smoothing(const RAWParams &raw, array2D<float> &rawData);
+
     void nodemosaic(bool bw);
     void eahd_demosaic();
     void hphd_demosaic();
