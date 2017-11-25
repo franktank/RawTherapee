@@ -3607,23 +3607,33 @@ void RawImageSource::highlight_smoothing(const RAWParams &raw, array2D<float> &r
 
     const float prescale = max(ref_pre_mul[0], ref_pre_mul[1], ref_pre_mul[2], ref_pre_mul[3]) / min(ref_pre_mul[0], ref_pre_mul[1], ref_pre_mul[2], ref_pre_mul[3]);
 
+    const float cmax = max(chmax[0], chmax[1], chmax[2], chmax[3], 65535.f);
+
     auto clip =
         [=](float v) -> float
         {
-            float f = (1.f - LIM01((v / 65535.f) * 0.25f)) * prescale;
+            float f = (1.f - LIM01((v / cmax) * 0.25f)) * prescale;
             if (f > 1e-4f) {
-                return CLIP(v * f) / f;
+                return LIM(v * f, 0.f, cmax) / f;
             } else {
                 return v;
             }
         };
+    std::vector<double> pts;
+    pts.push_back(double(DCT_Spline));
+    for (int i = 0; i <= int(cmax + 0.5); ++i) {
+        float x = float(i);
+        pts.push_back(x / cmax);
+        pts.push_back(clip(x) / cmax);
+    }
+    DiagonalCurve curve(pts);
     
 #ifdef _OPENMP
             #pragma omp parallel for
 #endif
     for (int row = 0; row < H; ++row) {
         for (int col = 0; col < W; ++col) {
-            rawData[row][col] = clip(rawData[row][col]);
+            rawData[row][col] = curve.getVal(rawData[row][col] / cmax) * cmax;
         }
     }
 
